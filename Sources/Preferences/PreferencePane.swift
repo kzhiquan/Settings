@@ -14,6 +14,7 @@ public protocol PreferencePane: NSViewController {
 	var preferencePaneIdentifier: Preferences.PaneIdentifier { get }
 	var preferencePaneTitle: String { get }
 	var toolbarItemIcon: NSImage { get }
+    func viewShouldDisppear() -> Bool
 }
 
 extension PreferencePane {
@@ -22,6 +23,10 @@ extension PreferencePane {
 	}
 
 	public var toolbarItemIcon: NSImage { .empty }
+
+    public func viewShouldDisppear() -> Bool {
+        return true
+    }
 }
 
 extension Preferences.PaneIdentifier {

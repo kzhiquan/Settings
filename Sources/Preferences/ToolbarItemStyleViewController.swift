@@ -32,6 +32,7 @@ final class ToolbarItemStyleViewController: NSObject, PreferencesStyleController
 	}
 
 	func toolbarItem(preferenceIdentifier: Preferences.PaneIdentifier) -> NSToolbarItem? {
+
 		guard let preference = (preferencePanes.first { $0.preferencePaneIdentifier == preferenceIdentifier }) else {
 			preconditionFailure()
 		}
@@ -42,7 +43,18 @@ final class ToolbarItemStyleViewController: NSObject, PreferencesStyleController
 		toolbarItem.target = self
 		toolbarItem.action = #selector(toolbarItemSelected)
 		return toolbarItem
+
 	}
+
+    // 工具条可能包含 flexibleSpace；按身份匹配，不能用工具条下标访问页面数组。
+    func updateLocalized() {
+        for item in toolbar.items {
+            guard let pane = preferencePanes.first(where: {
+                $0.toolbarItemIdentifier == item.itemIdentifier
+            }) else { continue }
+            item.label = pane.preferencePaneTitle
+        }
+    }
 
 	@IBAction private func toolbarItemSelected(_ toolbarItem: NSToolbarItem) {
 		delegate?.activateTab(
@@ -52,6 +64,10 @@ final class ToolbarItemStyleViewController: NSObject, PreferencesStyleController
 	}
 
 	func selectTab(index: Int) {
+
 		toolbar.selectedItemIdentifier = preferencePanes[index].toolbarItemIdentifier
+
+
+
 	}
 }

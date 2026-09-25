@@ -1,6 +1,7 @@
 import Cocoa
 
 final class PreferencesTabViewController: NSViewController, PreferencesStyleControllerDelegate {
+
 	private var activeTab: Int?
 	private var preferencePanes = [PreferencePane]()
 	private var style: Preferences.Style?
@@ -69,20 +70,39 @@ final class PreferencesTabViewController: NSViewController, PreferencesStyleCont
 	}
 
 	func activateTab(index: Int, animated: Bool) {
-		defer {
-			activeTab = index
-			preferencesStyleController.selectTab(index: index)
-			updateWindowTitle(tabIndex: index)
-		}
 
 		if activeTab == nil {
 			immediatelyDisplayTab(index: index)
+
+            activeTab = index
+            preferencesStyleController.selectTab(index: index)
+            updateWindowTitle(tabIndex: index)
+
 		} else {
+
 			guard index != activeTab else {
+
+                activeTab = index
+                preferencesStyleController.selectTab(index: index)
+                updateWindowTitle(tabIndex: index)
+
 				return
 			}
 
+            let result = (activeViewController as? PreferencePane)?.viewShouldDisppear() ?? false
+            guard result else {
+                if let index = activeTab {
+                    preferencesStyleController.selectTab(index: index)
+                }
+                return
+            }
+
 			animateTabTransition(index: index, animated: animated)
+
+            activeTab = index
+            preferencesStyleController.selectTab(index: index)
+            updateWindowTitle(tabIndex: index)
+
 		}
 	}
 
@@ -91,6 +111,13 @@ final class PreferencesTabViewController: NSViewController, PreferencesStyleCont
 			activateTab(index: 0, animated: false)
 		}
 	}
+
+    func updateLocalized() {
+        if let tabIndex = self.activeTab {
+            self.updateWindowTitle(tabIndex: tabIndex)
+        }
+        (self.preferencesStyleController as? ToolbarItemStyleViewController)?.updateLocalized()
+    }
 
 	private func updateWindowTitle(tabIndex: Int) {
 		window.title = {

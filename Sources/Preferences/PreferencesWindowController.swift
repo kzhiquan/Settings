@@ -1,3 +1,4 @@
+import AppKit
 import Cocoa
 
 extension NSWindow.FrameAutosaveName {
@@ -5,6 +6,7 @@ extension NSWindow.FrameAutosaveName {
 }
 
 public final class PreferencesWindowController: NSWindowController {
+
 	private let tabViewController = PreferencesTabViewController()
 
 	public var isAnimated: Bool {
@@ -45,6 +47,7 @@ public final class PreferencesWindowController: NSWindowController {
 		self.hidesToolbarForSingleItem = hidesToolbarForSingleItem
 		super.init(window: window)
 
+        window.delegate = self
 		window.contentViewController = tabViewController
 
 		window.titleVisibility = {
@@ -115,6 +118,7 @@ public final class PreferencesWindowController: NSWindowController {
 		window.setFrameUsingName(.preferences)
 		window.setFrameAutosaveName(.preferences)
 	}
+
 }
 
 extension PreferencesWindowController {
@@ -160,4 +164,22 @@ extension PreferencesWindowController {
 			hidesToolbarForSingleItem: hidesToolbarForSingleItem
 		)
 	}
+}
+
+
+extension PreferencesWindowController {
+
+    public func updateLocalized() {
+        self.tabViewController.updateLocalized()
+    }
+
+}
+
+extension PreferencesWindowController: NSWindowDelegate {
+
+    public func windowShouldClose(_ sender: NSWindow) -> Bool {
+        let result = (self.tabViewController.activeViewController as? PreferencePane)?.viewShouldDisppear() ?? true
+        return result
+    }
+
 }
