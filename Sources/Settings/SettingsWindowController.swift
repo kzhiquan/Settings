@@ -1,13 +1,11 @@
 import AppKit
-import Cocoa
 
 extension NSWindow.FrameAutosaveName {
-	static let preferences: NSWindow.FrameAutosaveName = "com.sindresorhus.Preferences.FrameAutosaveName"
+	static let settings: NSWindow.FrameAutosaveName = "com.sindresorhus.Settings.FrameAutosaveName"
 }
 
-public final class PreferencesWindowController: NSWindowController {
-
-	private let tabViewController = PreferencesTabViewController()
+public final class SettingsWindowController: NSWindowController {
+	private let tabViewController = SettingsTabViewController()
 
 	public var isAnimated: Bool {
 		get { tabViewController.isAnimated }
@@ -24,19 +22,19 @@ public final class PreferencesWindowController: NSWindowController {
 
 	private func updateToolbarVisibility() {
 		window?.toolbar?.isVisible = (hidesToolbarForSingleItem == false)
-			|| (tabViewController.preferencePanesCount > 1)
+			|| (tabViewController.settingsPanesCount > 1)
 	}
 
 	public init(
-		preferencePanes: [PreferencePane],
-		style: Preferences.Style = .toolbarItems,
+		panes: [SettingsPane],
+		style: Settings.Style = .toolbarItems,
 		animated: Bool = true,
 		hidesToolbarForSingleItem: Bool = true
 	) {
-		precondition(!preferencePanes.isEmpty, "You need to set at least one view controller")
+		precondition(!panes.isEmpty, "You need to set at least one pane")
 
-		let window = UserInteractionPausableWindow(
-			contentRect: preferencePanes[0].view.bounds,
+		let window = SettingsWindow(
+			contentRect: panes[0].view.bounds,
 			styleMask: [
 				.titled,
 				.closable
@@ -46,8 +44,8 @@ public final class PreferencesWindowController: NSWindowController {
 		)
 		self.hidesToolbarForSingleItem = hidesToolbarForSingleItem
 		super.init(window: window)
-
         window.delegate = self
+
 		window.contentViewController = tabViewController
 
 		window.titleVisibility = {
@@ -55,7 +53,7 @@ public final class PreferencesWindowController: NSWindowController {
 			case .toolbarItems:
 				return .visible
 			case .segmentedControl:
-				return preferencePanes.count <= 1 ? .visible : .hidden
+				return panes.count <= 1 ? .visible : .hidden
 			}
 		}()
 
@@ -64,65 +62,69 @@ public final class PreferencesWindowController: NSWindowController {
 		}
 
 		tabViewController.isAnimated = animated
-		tabViewController.configure(preferencePanes: preferencePanes, style: style)
+		tabViewController.configure(panes: panes, style: style)
 		updateToolbarVisibility()
 	}
 
 	@available(*, unavailable)
 	override public init(window: NSWindow?) {
-		fatalError("init(window:) is not supported, use init(preferences:style:animated:)")
+		fatalError("init(window:) is not supported, use init(panes:style:animated:hidesToolbarForSingleItem:)")
 	}
 
 	@available(*, unavailable)
 	public required init?(coder: NSCoder) {
-		fatalError("init(coder:) is not supported, use init(preferences:style:animated:)")
+		fatalError("init(coder:) is not supported, use init(panes:style:animated:hidesToolbarForSingleItem:hidesToolbarForSingleItem:)")
 	}
 
 
 	/**
-	Show the preferences window and brings it to front.
+	Show the settings window and brings it to front.
 
-	If you pass a `Preferences.PaneIdentifier`, the window will activate the corresponding tab.
+	If you pass a `Settings.PaneIdentifier`, the window will activate the corresponding tab.
 
-	- Parameter preferencePane: Identifier of the preference pane to display, or `nil` to show the tab that was open when the user last closed the window.
+	- Parameter paneIdentifier: Identifier of the settings pane to display, or `nil` to show the tab that was open when the user last closed the window.
 
 	- Note: Unless you need to open a specific pane, prefer not to pass a parameter at all or `nil`.
 
 	- See `close()` to close the window again.
 	- See `showWindow(_:)` to show the window without the convenience of activating the app.
 	*/
-	public func show(preferencePane preferenceIdentifier: Preferences.PaneIdentifier? = nil) {
-		if let preferenceIdentifier = preferenceIdentifier {
-			tabViewController.activateTab(preferenceIdentifier: preferenceIdentifier, animated: false)
+	public func show(pane paneIdentifier: Settings.PaneIdentifier? = nil) {
+		if let paneIdentifier {
+			tabViewController.activateTab(paneIdentifier: paneIdentifier, animated: false)
 		} else {
 			tabViewController.restoreInitialTab()
 		}
 
+		#if compiler(>=5.9) && canImport(AppKit)
+		if #available(macOS 14, *) {
+			NSApp.activate()
+		} else {
+			NSApp.activate(ignoringOtherApps: true)
+		}
+		#else
+		NSApp.activate(ignoringOtherApps: true)
+		#endif
+
 		showWindow(self)
 		restoreWindowPosition()
-		NSApp.activate(ignoringOtherApps: true)
 	}
 
 	private func restoreWindowPosition() {
-		guard
-			let window = window,
-			let screenContainingWindow = window.screen
-		else {
+		guard let window else {
 			return
 		}
 
-		window.setFrameOrigin(CGPoint(
-			x: screenContainingWindow.visibleFrame.midX - window.frame.width / 2,
-			y: screenContainingWindow.visibleFrame.midY - window.frame.height / 2
-		))
-		window.setFrameUsingName(.preferences)
-		window.setFrameAutosaveName(.preferences)
+		window.center()
+		window.setFrameUsingName(.settings)
+		window.setFrameAutosaveName(.settings)
 	}
-
 }
 
-extension PreferencesWindowController {
-	/// Returns the active pane if it responds to the given action.
+extension SettingsWindowController {
+	/**
+	Returns the active pane if it responds to the given action.
+	*/
 	override public func supplementalTarget(forAction action: Selector, sender: Any?) -> Any? {
 		if let target = super.supplementalTarget(forAction: action, sender: sender) {
 			return target
@@ -145,20 +147,18 @@ extension PreferencesWindowController {
 }
 
 @available(macOS 10.15, *)
-extension PreferencesWindowController {
+extension SettingsWindowController {
 	/**
-	Create a preferences window from only SwiftUI-based preference panes.
+	Create a settings window from only SwiftUI-based settings panes.
 	*/
 	public convenience init(
-		panes: [PreferencePaneConvertible],
-		style: Preferences.Style = .toolbarItems,
+		panes: [SettingsPaneConvertible],
+		style: Settings.Style = .toolbarItems,
 		animated: Bool = true,
 		hidesToolbarForSingleItem: Bool = true
 	) {
-		let preferencePanes = panes.map { $0.asPreferencePane() }
-
 		self.init(
-			preferencePanes: preferencePanes,
+			panes: panes.map { $0.asSettingsPane() },
 			style: style,
 			animated: animated,
 			hidesToolbarForSingleItem: hidesToolbarForSingleItem
@@ -166,20 +166,15 @@ extension PreferencesWindowController {
 	}
 }
 
-
-extension PreferencesWindowController {
-
-    public func updateLocalized() {
-        self.tabViewController.updateLocalized()
-    }
-
+private final class SettingsWindow: UserInteractionPausableWindow {
+	override var canBecomeMain: Bool { false }
 }
 
-extension PreferencesWindowController: NSWindowDelegate {
+// 保留本地扩展：语言刷新与关闭前的页面确认。
+extension SettingsWindowController: NSWindowDelegate {
+    public func updateLocalized() { tabViewController.updateLocalized() }
 
     public func windowShouldClose(_ sender: NSWindow) -> Bool {
-        let result = (self.tabViewController.activeViewController as? PreferencePane)?.viewShouldDisppear() ?? true
-        return result
+        (tabViewController.activeViewController as? SettingsPane)?.viewShouldDisppear() ?? true
     }
-
 }

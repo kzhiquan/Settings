@@ -1,23 +1,27 @@
-// swift-tools-version:5.4
+// swift-tools-version:5.8
 import PackageDescription
 
 let package = Package(
-	name: "Preferences",
+	name: "Settings",
+    defaultLocalization: "en",
 	platforms: [
-		.macOS(.v10_10)
+		.macOS(.v10_13)
 	],
 	products: [
 		.library(
-			name: "Preferences",
+			name: "Settings",
 			targets: [
-				"Preferences"
+				"Settings"
 			]
 		)
 	],
 	targets: [
 		.target(
-			name: "Preferences"
+			name: "Settings",
+			resources: [
+				.process("Resources")
+			]
 		),
-        .testTarget(name: "PreferencesTests", dependencies: ["Preferences"])
+        .testTarget(name: "SettingsTests", dependencies: ["Settings"])
 	]
 )

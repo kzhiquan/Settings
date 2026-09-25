@@ -1,6 +1,6 @@
-import Cocoa
+import AppKit
 
-extension Preferences {
+extension Settings {
 	public struct PaneIdentifier: Hashable, RawRepresentable, Codable {
 		public let rawValue: String
 
@@ -10,16 +10,16 @@ extension Preferences {
 	}
 }
 
-public protocol PreferencePane: NSViewController {
-	var preferencePaneIdentifier: Preferences.PaneIdentifier { get }
-	var preferencePaneTitle: String { get }
+public protocol SettingsPane: NSViewController {
+	var paneIdentifier: Settings.PaneIdentifier { get }
+	var paneTitle: String { get }
 	var toolbarItemIcon: NSImage { get }
     func viewShouldDisppear() -> Bool
 }
 
-extension PreferencePane {
+extension SettingsPane {
 	public var toolbarItemIdentifier: NSToolbarItem.Identifier {
-		preferencePaneIdentifier.toolbarItemIdentifier
+		paneIdentifier.toolbarItemIdentifier
 	}
 
 	public var toolbarItemIcon: NSImage { .empty }
@@ -29,7 +29,7 @@ extension PreferencePane {
     }
 }
 
-extension Preferences.PaneIdentifier {
+extension Settings.PaneIdentifier {
 	public init(_ rawValue: String) {
 		self.init(rawValue: rawValue)
 	}

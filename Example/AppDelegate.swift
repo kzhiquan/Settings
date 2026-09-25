@@ -1,7 +1,7 @@
 import Cocoa
-import Preferences
+import Settings
 
-extension Preferences.PaneIdentifier {
+extension Settings.PaneIdentifier {
 	static let general = Self("general")
 	static let accounts = Self("accounts")
 	static let advanced = Self("advanced")
@@ -11,22 +11,22 @@ extension Preferences.PaneIdentifier {
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	@IBOutlet private var window: NSWindow!
 
-	private var preferencesStyle: Preferences.Style {
-		get { .preferencesStyleFromUserDefaults() }
+	private var settingsStyle: Settings.Style {
+		get { .settingsStyleFromUserDefaults() }
 		set {
 			newValue.storeInUserDefaults()
 		}
 	}
 
-	private lazy var preferences: [PreferencePane] = [
-		GeneralPreferenceViewController(),
-		AccountsPreferenceViewController(),
-		AdvancedPreferenceViewController()
+	private lazy var panes: [SettingsPane] = [
+		GeneralSettingsViewController(),
+		AccountsSettingsViewController(),
+		AdvancedSettingsViewController()
 	]
 
-	private lazy var preferencesWindowController = PreferencesWindowController(
-		preferencePanes: preferences,
-		style: preferencesStyle,
+	private lazy var settingsWindowController = SettingsWindowController(
+		panes: panes,
+		style: settingsStyle,
 		animated: true,
 		hidesToolbarForSingleItem: true
 	)
@@ -36,18 +36,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
-		preferencesWindowController.show(preferencePane: .accounts)
+		settingsWindowController.show(pane: .accounts)
 	}
 
-	@IBAction private func preferencesMenuItemActionHandler(_ sender: NSMenuItem) {
-		preferencesWindowController.show()
+	@IBAction private func settingsMenuItemActionHandler(_ sender: NSMenuItem) {
+		settingsWindowController.show()
 	}
 
 	@IBAction private func switchStyle(_ sender: Any) {
-		preferencesStyle = preferencesStyle == .segmentedControl
+		settingsStyle = settingsStyle == .segmentedControl
 			? .toolbarItems
 			: .segmentedControl
 
-		NSApp.relaunch()
+		Task {
+			try! await NSApp.relaunch() // swiftlint:disable:this force_try
+		}
 	}
 }

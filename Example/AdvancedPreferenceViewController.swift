@@ -1,15 +1,15 @@
 import Cocoa
-import Preferences
+import Settings
 
-final class AdvancedPreferenceViewController: NSViewController, PreferencePane {
-	let preferencePaneIdentifier = Preferences.PaneIdentifier.advanced
-	let preferencePaneTitle = "Advanced"
-	let toolbarItemIcon = NSImage(systemSymbolName: "gearshape.2", accessibilityDescription: "Advanced preferences")!
+final class AdvancedSettingsViewController: NSViewController, SettingsPane {
+	let paneIdentifier = Settings.PaneIdentifier.advanced
+	let paneTitle = "Advanced"
+	let toolbarItemIcon = NSImage(systemSymbolName: "gearshape.2", accessibilityDescription: "Advanced settings")!
 
 	@IBOutlet private var fontLabel: NSTextField!
 	private var font = NSFont.systemFont(ofSize: 14)
 
-	override var nibName: NSNib.Name? { "AdvancedPreferenceViewController" }
+	override var nibName: NSNib.Name? { "AdvancedSettingsViewController" }
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
